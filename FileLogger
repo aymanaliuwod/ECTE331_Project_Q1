@@ -5,25 +5,33 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
 
+/**
+ * Utility class for resilient file logging with simulated failure and backups.
+ */
 public class FileLogger {
 
     public static final int MAX_BACKUP = 5;
     private static final Random random = new Random();
 
+    /**
+     * Attempts to log a message to the base file or fallbacks if a write failure occurs.
+     */
     public static void log(String baseName, String message) {
         String timeStampedMessage = "[" + getCurrentTimeStamp() + "] " + message;
 
+        // Try primary and backup log files
         for (int i = 0; i <= MAX_BACKUP; i++) {
             String fileName = (i == 0) ? baseName + ".txt" : baseName + i + ".txt";
             try {
-                simulateFailure();
+                simulateFailure(); // simulate 40% write failure
                 writeToFile(fileName, timeStampedMessage);
-                return; // success
+                return;
             } catch (IOException e) {
-                // try next
+                // Continue to next backup
             }
         }
 
+        // Final fallback to principal log file
         try {
             writeToFile("principal_log.txt", timeStampedMessage);
         } catch (IOException e) {
@@ -31,18 +39,27 @@ public class FileLogger {
         }
     }
 
+    /**
+     * Simulates a 40% chance of I/O failure.
+     */
     private static void simulateFailure() throws IOException {
         if (random.nextInt(100) < 40) {
             throw new IOException("Simulated write failure");
         }
     }
 
+    /**
+     * Appends the message to the specified log file.
+     */
     private static void writeToFile(String fileName, String message) throws IOException {
         FileWriter fw = new FileWriter(fileName, true);
         fw.write(message + "\n");
         fw.close();
     }
 
+    /**
+     * Returns the current timestamp in yyyy-MM-dd HH:mm:ss format.
+     */
     private static String getCurrentTimeStamp() {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
     }
